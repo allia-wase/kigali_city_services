@@ -84,6 +84,16 @@ class _ListingFormState extends ConsumerState<ListingForm> {
     }
   }
 
+  List<DropdownMenuItem<String>> get _categoryItems {
+    final items = _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList();
+    if (category.isNotEmpty && !_categories.contains(category)) {
+      items.insert(0, DropdownMenuItem(value: category, child: Text(category)));
+    }
+    return items;
+  }
+
+  String? get _effectiveCategory => category.isEmpty ? null : category;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -101,10 +111,10 @@ class _ListingFormState extends ConsumerState<ListingForm> {
                 validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
               ),
               DropdownButtonFormField<String>(
-                value: category.isEmpty ? null : category,
+                value: category.isEmpty ? null : _effectiveCategory,
                 decoration: const InputDecoration(labelText: 'Category'),
                 hint: const Text('Select category'),
-                items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                items: _categoryItems,
                 onChanged: (v) => setState(() => category = v ?? ''),
                 onSaved: (v) => category = v ?? '',
                 validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
