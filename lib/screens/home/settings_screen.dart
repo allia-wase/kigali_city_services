@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/auth_provider.dart';
@@ -11,7 +12,6 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final profile = ref.watch(userProfileProvider);
     final notify = ref.watch(notificationPrefProvider);
     final themeMode = ref.watch(themeModeProvider);
     return Scaffold(
@@ -56,20 +56,7 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: 20),
             Text('Account', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
-            profile.when(
-              data: (p) => p == null
-                  ? const Text('No profile')
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Email: ${p.email}'),
-                        if (p.displayName != null)
-                          Text('Name: ${p.displayName}'),
-                      ],
-                    ),
-              loading: () => const CircularProgressIndicator(),
-              error: (e, _) => Text('Profile: $e'),
-            ),
+            const _AccountInfo(),
             const SizedBox(height: 12),
             const _EmailVerifiedBadge(),
             const SizedBox(height: 20),
@@ -92,6 +79,47 @@ class SettingsScreen extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _AccountInfo extends ConsumerWidget {
+  const _AccountInfo();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final profile = ref.watch(userProfileProvider);
+    final auth = ref.watch(authStateProvider);
+
+    return profile.when(
+      data: (p) => p == null
+          ? _buildFallback(auth.value)
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Email: ${p.email}'),
+                if (p.displayName != null) Text('Name: ${p.displayName}'),
+              ],
+            ),
+      loading: () => const CircularProgressIndicator(),
+      error: (_, __) => _buildFallback(auth.value),
+    );
+  }
+
+  Widget _buildFallback(User? user) {
+    if (user == null) return const Text('No user');
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Email: ${user.email}'),
+        Text(
+          'Profile unavailable (check Firestore rules)',
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey.shade600,
+          ),
+        ),
+      ],
     );
   }
 }
