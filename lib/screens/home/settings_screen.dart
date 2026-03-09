@@ -54,6 +54,8 @@ class SettingsScreen extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 20),
+            Text('Account', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
             profile.when(
               data: (p) => p == null
                   ? const Text('No profile')
@@ -66,8 +68,10 @@ class SettingsScreen extends ConsumerWidget {
                       ],
                     ),
               loading: () => const CircularProgressIndicator(),
-              error: (e, _) => Text('Error: $e'),
+              error: (e, _) => Text('Profile: $e'),
             ),
+            const SizedBox(height: 12),
+            const _EmailVerifiedBadge(),
             const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -88,6 +92,45 @@ class SettingsScreen extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _EmailVerifiedBadge extends ConsumerWidget {
+  const _EmailVerifiedBadge();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final auth = ref.watch(authStateProvider);
+    return auth.when(
+      data: (user) {
+        if (user == null) return const SizedBox.shrink();
+        final verified = user.emailVerified;
+        return Row(
+          children: [
+            Icon(
+              verified ? Icons.verified : Icons.info_outline,
+              size: 20,
+              color: verified
+                  ? Colors.green
+                  : Theme.of(context).colorScheme.error,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              verified ? 'Email verified' : 'Email not verified',
+              style: TextStyle(
+                color: verified
+                    ? Colors.green
+                    : Theme.of(context).colorScheme.error,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      // ignore: unnecessary_underscores
+      error: (_, __) => const SizedBox.shrink(),
     );
   }
 }

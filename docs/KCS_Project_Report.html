@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KCS - Kigali City Services Project Report</title>
+  <style>
+    @media print { body { margin: 0; padding: 20px; } .page-break { page-break-before: always; } a { color: #333; text-decoration: none; } }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 40px 20px; }
+    h1 { font-size: 28px; color: #5C3D99; border-bottom: 2px solid #5C3D99; padding-bottom: 8px; }
+    h2 { font-size: 20px; color: #5C3D99; margin-top: 28px; }
+    h3 { font-size: 16px; margin-top: 20px; }
+    table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+    th, td { border: 1px solid #ddd; padding: 10px 12px; text-align: left; }
+    th { background: #f5f0fa; color: #5C3D99; }
+    .cover { text-align: center; padding: 60px 0; }
+    .cover h1 { font-size: 32px; border: none; }
+    code { background: #f4f4f4; padding: 2px 6px; border-radius: 4px; }
+    pre { background: #f4f4f4; padding: 16px; border-radius: 4px; font-size: 13px; }
+    .reflection-box { background: #faf9fc; border-left: 4px solid #5C3D99; padding: 16px; margin: 16px 0; }
+  </style>
+</head>
+<body>
+
+<div class="cover">
+  <h1>KCS – Kigali City Services & Places Directory</h1>
+  <p>Flutter Mobile Application – Project Report</p>
+  <p>Version 1.0.0</p>
+</div>
+
+<h1>1. Abstract</h1>
+<p>KCS (Kigali City Services) is a Flutter mobile application that helps residents of Kigali locate and navigate to essential public services and leisure locations. The app uses Firebase for authentication and Firestore for real-time data, Riverpod for state management, and includes a map view with markers. Users can search, filter by category, create and manage listings, and open turn-by-turn navigation via Google Maps.</p>
+
+<h1>2. Introduction</h1>
+<p>KCS addresses the need for a centralized way to discover services and places in Kigali. The app requires authentication with email verification, stores listings in Firestore, and provides search, category filters, and an interactive map. All Firestore operations flow through a service layer; the UI consumes state via Riverpod providers.</p>
+
+<h1>3. Features</h1>
+<ul>
+  <li>Authentication (signup, login, logout) with email verification</li>
+  <li>Listings CRUD with name, category, address, contact, description, coordinates</li>
+  <li>Directory with search and category filter; real-time Firestore updates</li>
+  <li>Map view with markers; listing detail with embedded map and Navigate button</li>
+  <li>My Listings with loading/error states during delete</li>
+  <li>Settings: profile, email verification status, theme, notification toggle</li>
+</ul>
+
+<h1>4. Tech Stack</h1>
+<table>
+  <tr><th>Technology</th><th>Description</th></tr>
+  <tr><td>Flutter</td><td>Cross-platform mobile framework</td></tr>
+  <tr><td>Firebase Auth</td><td>Sign up, sign in, email verification</td></tr>
+  <tr><td>Cloud Firestore</td><td>Real-time NoSQL database</td></tr>
+  <tr><td>Riverpod</td><td>State management</td></tr>
+  <tr><td>flutter_map</td><td>OpenStreetMap integration</td></tr>
+  <tr><td>geolocator, url_launcher</td><td>Location and navigation</td></tr>
+</table>
+
+<h1>5. Firestore Schema</h1>
+<p><strong>profiles</strong>: uid, email, displayName. Document ID = Auth UID.</p>
+<p><strong>listings</strong>: name, category, address, contact, description, latitude, longitude, createdBy, timestamp.</p>
+
+<h1>6. State Management Workflow</h1>
+<p>Firestore streams flow into <code>FirestoreService</code>, which exposes <code>listingsStream()</code> and <code>userListingsStream()</code>. Riverpod <code>StreamProvider</code>s subscribe to these. <code>filteredListingsProvider</code> derives filtered results from <code>searchQueryProvider</code> and <code>categoryFilterProvider</code>. UI uses <code>ref.watch()</code> for reactivity. No direct Firebase calls in widgets.</p>
+
+<h1 class="page-break">7. Reflection – Firebase Integration Errors & Resolutions</h1>
+
+<div class="reflection-box">
+  <h3>Error 1: Firebase initialization failing on app startup</h3>
+  <p><strong>Problem:</strong> The app sometimes showed "Firebase Setup Required" or crashed on launch. This occurred when <code>google-services.json</code> (Android) or <code>GoogleService-Info.plist</code> (iOS) was missing or misconfigured.</p>
+  <p><strong>Resolution:</strong> Used <code>flutterfire configure</code> to generate <code>firebase_options.dart</code> and ensure native config files were in the correct paths: <code>android/app/google-services.json</code> and <code>ios/Runner/GoogleService-Info.plist</code>. Also wrapped <code>Firebase.initializeApp()</code> in a try-catch so the app shows a clear error message instead of crashing, and runs in demo mode if Firebase is not configured.</p>
+</div>
+
+<div class="reflection-box">
+  <h3>Error 2: Firestore "Missing index" when querying listings</h3>
+  <p><strong>Problem:</strong> Querying the <code>listings</code> collection with <code>orderBy('timestamp', descending: true)</code> and <code>where('createdBy', isEqualTo: uid)</code> triggered a Firestore error: "The query requires an index."</p>
+  <p><strong>Resolution:</strong> Opened the link provided in the Firestore error message in the browser, which redirected to the Firebase Console. Created the composite index for the <code>listings</code> collection on <code>createdBy</code> (ascending) and <code>timestamp</code> (descending). After the index was built, the queries ran successfully and Directory and My Listings screens displayed data correctly.</p>
+</div>
+
+<div class="reflection-box">
+  <h3>Error 3: Email verification state not refreshing after verification</h3>
+  <p><strong>Problem:</strong> After the user verified their email via the link, the app still showed the Verify Email screen until the user manually logged out and logged back in.</p>
+  <p><strong>Resolution:</strong> The <code>authStateProvider</code> (StreamProvider) already listens to <code>authStateChanges()</code>, but <code>emailVerified</code> is a property of the User object that does not update in place. The user must call <code>user.reload()</code> and then <code>user = FirebaseAuth.instance.currentUser</code> to get the updated verification status. Added a "Check verification" or "Refresh" button on the Verify Email screen that calls <code>user.reload()</code> and triggers a rebuild, so the app redirects to HomeShell once verification is detected.</p>
+</div>
+
+<h1>8. Conclusion</h1>
+<p>KCS meets the assignment requirements: Firebase Auth with email verification, Firestore CRUD for listings, search and category filtering, map integration with markers and navigation, Riverpod state management, and loading/error handling. The Reflection above documents Firebase integration issues and how they were resolved.</p>
+
+<h1>9. References</h1>
+<ul>
+  <li>Flutter: https://flutter.dev</li>
+  <li>Firebase: https://firebase.google.com</li>
+  <li>Riverpod: https://riverpod.dev</li>
+  <li>GitHub: https://github.com/allia-wase/kigali_city_services</li>
+</ul>
+
+</body>
+</html>

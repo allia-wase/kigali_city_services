@@ -57,6 +57,11 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                   const Text('Please check your inbox and verify your email.'),
                   const SizedBox(height: 16),
                   ElevatedButton(
+                    onPressed: _checkVerified,
+                    child: const Text('Check verification'),
+                  ),
+                  const SizedBox(height: 8),
+                  TextButton(
                     onPressed: () {
                       FirebaseAuth.instance.currentUser?.sendEmailVerification();
                     },

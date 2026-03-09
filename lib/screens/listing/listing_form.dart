@@ -5,6 +5,16 @@ import '../../models/listing.dart';
 import '../../services/firestore_service.dart';
 import '../../providers/auth_provider.dart';
 
+const _categories = [
+  'Hospital',
+  'Police Station',
+  'Library',
+  'Restaurant',
+  'Café',
+  'Park',
+  'Tourist Attraction',
+];
+
 class ListingForm extends ConsumerStatefulWidget {
   final Listing? existing;
   const ListingForm({this.existing, super.key});
@@ -90,9 +100,12 @@ class _ListingFormState extends ConsumerState<ListingForm> {
                 onSaved: (v) => name = v ?? '',
                 validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
               ),
-              TextFormField(
-                initialValue: category,
+              DropdownButtonFormField<String>(
+                value: category.isEmpty ? null : category,
                 decoration: const InputDecoration(labelText: 'Category'),
+                hint: const Text('Select category'),
+                items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                onChanged: (v) => setState(() => category = v ?? ''),
                 onSaved: (v) => category = v ?? '',
                 validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
               ),

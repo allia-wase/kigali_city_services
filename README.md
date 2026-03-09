@@ -1,14 +1,21 @@
 # KCS – Kigali City Services & Places Directory
 
-Flutter app for browsing services and places in Kigali: listings, map view, search, and reviews.
+Flutter app for browsing services and places in Kigali: listings, map view, search, and category filtering.
+
+## Features
+
+- **Authentication**: Sign up, login, logout with Firebase Auth. Email verification required.
+- **Listings CRUD**: Create, read, update, delete listings (name, category, address, contact, description, coordinates).
+- **Directory**: Browse listings with real-time Firestore updates, search by name, filter by category.
+- **Map View**: OpenStreetMap with markers; tap to open listing detail.
+- **My Listings**: View, edit, delete your own listings. Loading and error states during delete.
+- **Settings**: User profile, email verification status, theme (light/dark/system), notification toggle, log out.
 
 ## Firebase Setup
 
-Install Firebase CLI.
-
-Enable Firebase Auth (Email/Password, optionally Google Sign-In) and Cloud Firestore in the Firebase Console.
-
-From the project directory, run:
+1. Install [Firebase CLI](https://firebase.google.com/docs/cli).
+2. Enable **Firebase Auth** (Email/Password) and **Cloud Firestore** in the [Firebase Console](https://console.firebase.google.com).
+3. From the project directory:
 
 ```bash
 dart pub global activate flutterfire_cli
@@ -19,24 +26,43 @@ This generates `lib/firebase_options.dart` and downloads `google-services.json` 
 
 ## Firestore Collections
 
-- **listings** – Services and places: name, category, address, contact, description, location (lat/lng), createdBy, createdAt, updatedAt, imageUrl. Used for both services and places.
-- **users** – User profiles. Write access restricted to the owning user.
-- **listings/{listingId}/reviews** – Reviews subcollection per listing. Anyone can read; create/update/delete restricted to the review author.
+- **profiles** – User profiles. Document ID = Firebase Auth UID. Fields: `uid`, `email`, `displayName`.
+- **listings** – Services and places. Fields: `name`, `category`, `address`, `contact`, `description`, `latitude`, `longitude`, `createdBy`, `timestamp`.
 
 ## State Management
 
-Uses Riverpod:
+Uses **Riverpod**:
 
-- **Auth**: `authStateProvider`, `authStateNotifierProvider` for auth state and redirects.
-- **Listings**: `listingsProvider`, `filteredListingsProvider`, `myListingsProvider`, `listingDetailProvider`.
-- **Search/filter**: `searchQueryProvider`, `selectedCategoryProvider`.
-- **Reviews**: `reviewsProvider` for listing reviews.
-- **Settings**: `settings_providers.dart` for app preferences.
+- **Auth**: `authStateProvider`, `userProfileProvider` – auth state and profile stream.
+- **Listings**: `listingListProvider`, `userListingsProvider`, `filteredListingsProvider` – all listings, user listings, search/filter results.
+- **Search/filter**: `searchQueryProvider`, `categoryFilterProvider`.
+- **Theme**: `themeModeProvider`, `flutterThemeModeProvider`.
+
+Firestore CRUD is in `FirestoreService`; UI never calls Firebase directly. Loading, success, and error states are handled for auth and CRUD.
 
 ## Navigation
 
-Uses GoRouter:
+- **MaterialApp** with auth-based routing: unauthenticated → LoginScreen; unverified email → VerifyEmailScreen; verified → HomeShell.
+- **Bottom navigation**: Directory, My Listings, Map View, Settings.
+- **Routes**: `/signup`. Listing form/detail via `Navigator.push`.
 
-- **Auth redirect**: Unauthenticated users go to `/login`; unverified email goes to `/verify-email`.
-- **Shell route** with bottom nav: Directory, My Listings, Map View, Settings.
-- **Main routes**: `/login`, `/sign-up`, `/verify-email`, `/listing/:id`, `/listing/:id/reviews`, `/add-listing`, `/edit-listing`.
+## Project Structure
+
+```
+lib/
+├── main.dart              # Entry, Firebase init, auth routing, HomeShell
+├── firebase.dart          # initializeFirebase()
+├── firebase_options.dart  # Platform config
+├── models/                # Listing, UserProfile
+├── providers/             # auth, listing, theme
+├── services/              # AuthService, FirestoreService
+├── screens/               # auth, home, listing
+└── theme/                 # app_theme.dart
+```
+
+## Running the App
+
+```bash
+flutter pub get
+flutter run
+```
